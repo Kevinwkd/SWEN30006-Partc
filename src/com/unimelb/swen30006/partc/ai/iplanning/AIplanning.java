@@ -57,13 +57,13 @@ public class AIplanning implements IPlanning {
 		else return false;
 	}
 	public boolean turn(){
+		System.out.println("ss");
 		Vector2 carposition=new Vector2((int)car.getPosition().x,(int)car.getPosition().y);
 		Vector2 desposition=new Vector2((int)destination.x,(int)destination.y);
 		Vector2 need=desposition.sub(carposition);
 		double angle=need.angle()-car.getVelocity().angle();
 		if(angle<2)return false;
 		else return true;
-		
 	}
 	@Override
 	public float eta() {
