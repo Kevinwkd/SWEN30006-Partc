@@ -3,6 +3,7 @@ package com.unimelb.swen30006.partc.HandleResponse;
 import java.awt.geom.Point2D;
 
 import com.unimelb.swen30006.partc.ai.interfaces.PerceptionResponse;
+import com.unimelb.swen30006.partc.ai.interfaces.PerceptionResponse.Classification;
 import com.unimelb.swen30006.partc.core.World;
 import com.unimelb.swen30006.partc.core.objects.Car;
 import com.unimelb.swen30006.partc.core.objects.WorldObject;
@@ -15,89 +16,52 @@ public class HandleResponse {
 	public ObstacleHandler obstaclehandler;
 	public RegularHandler regularhandler;
 	
-	public WorldObject avoidObject;
+	public PerceptionResponse avoidObject;
 	public String type = "straight";
 	public int avoidTime = 0;
+	public Road nextroad;
 	
 	
 	public HandleResponse(Car car){
 		this.car =car;
 		this.trafficlighthandler = new TrafficlightHandler(car);
 		this.obstaclehandler = new ObstacleHandler(car);
-		this.regularhandler = new RegularHandler(car);
+		this.regularhandler = new RegularHandler(car,nextroad);
 	}
 	
-	public void update(PerceptionResponse results[],float detla){
+	public void update(PerceptionResponse results[],float detla, World world){
 		if(results.length == 0){
 			if(type != "straight"){
-				int res = regularhandler.adjustDirection(type,avoidTime);
+				int res = regularhandler.adjustDirection(type,avoidTime,world);
 				if(res == 1){ 
 					type = "straight";
-				}else{ avoidTime --;}
+				}else if(res == 2){ avoidTime --;}
 			}
+			if(avoidObject != null){
+				String temp;
+				if((temp = regularhandler.isFinishAvoiding(avoidObject) )!= "straight"){
+					type = temp;
+					avoidObject = null;
+					avoidTime = 5;
+				}
+			}
+		
+			if((type = regularhandler.TurnNextRoad(world)) != "straight"){
+				avoidTime = 5;
+			}
+		}else if(results[0].objectType == Classification.TrafficLight){
+			trafficlighthandler.trafficlightResponse();
+		}else{
+			avoidObject = results[0];
+			type = obstaclehandler.obstacleResponse(results[0], world);
+			avoidTime = 5;
 		}
+		
+		
 			
 	}
 	
-	/*public void RoadResponse(World world, Road road){
-		Point2D.Double carPosition = car.getPosition();
-		Road curRoad = world.roadAtPoint(carPosition);
-		
-		if(curRoad == road){ //the car not on the right lane
-			if(car.getVelocity().angle() != 0){
-				car.accelerate();
-			}else{
-				car.turn(45);
-			}
-		}
-		Point2D.Double startpos = road.getStartPos();
-		Point2D.Double endpos = road.getEndPos();
-		Point2D.Double roadpos = (startpos.distance(carPosition) > endpos.distance(carPosition)) 
-				? startpos : endpos;
-		
-		if(Math.abs(car.getPosition().x - startpos.x ) == 5 || 
-				Math.abs(startpos.y - car.getPosition().y) == 5){
-			car.accelerate();
-		}else if(Math.abs(roadpos.x - carPosition.x) < 15 || 
-				Math.abs(roadpos.y - carPosition.y) < 15 ){
-			//car.turn(45);
-			car.turn(90);
-		}else if(Math.abs(roadpos.x - carPosition.x) > 15 || 
-				Math.abs(roadpos.y - carPosition.y) > 15 ){
-			//car.turn(-45);
-			car.turn(-90);
-		}
-		
-	}
-	
-	public void ObstacleResponse(){
-		if(car.getVelocity().angle() != 0){
-			car.accelerate();
-		}else{
-			car.turn(-45);
-		}
-	}
-	
-	public void RegularResponse(Point2D.Double des){
-		if(!HasArrived(des)){
-			if(car.getVelocity().angle() != 0){ 
-				car.turn(-45);
-			}else{
-				car.accelerate();
-			}
-			
-		}else{
-			car.brake();
-		}
-	}
-	
-	private boolean HasArrived(Point2D.Double des){
-		if(car.getPosition().x == des.x || car.getPosition().y == des.y){
-			return true;
-		}else{
-			return false;
-		}
-	}*/
+
 	
 	
 	
